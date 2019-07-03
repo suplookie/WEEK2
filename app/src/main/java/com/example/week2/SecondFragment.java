@@ -107,8 +107,6 @@ public class SecondFragment extends Fragment {
         });
 
 
-
-
         //fab click시 앨범에서 이미지 가져와 리스트에 추가
         FloatingActionButton fab = view.findViewById(R.id.fab);
         fab_img = view.findViewById(R.id.fab_img);
