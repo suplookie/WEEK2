@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 
 
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -19,13 +20,18 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.common.api.Response;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,6 +40,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Future;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 public class SecondFragment extends Fragment {
 
@@ -46,6 +57,7 @@ public class SecondFragment extends Fragment {
     private boolean isMenuOpen = false;
     private Uri imgUri, photoURI;
     static FloatingActionButton delete_fab;
+    String path;
 
     public static SecondFragment newInstance() {
         Bundle args = new Bundle();
@@ -70,13 +82,13 @@ public class SecondFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_second, container, false);
         tedPermission();
 
-        MainActivity.list = new ArrayList<>();
+        TabActivity.list = new ArrayList<>();
         delete_fab = view.findViewById(R.id.fab_delete);
         delete_fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 while (!CardAdapter.cards.isEmpty()) {
-                    MainActivity.list.remove(CardAdapter.cards.get(0).uri);
+                    TabActivity.list.remove(CardAdapter.cards.get(0).uri);
                     CardAdapter.cards.remove(0);
                 }
                 delete_fab.hide();
@@ -96,7 +108,7 @@ public class SecondFragment extends Fragment {
         recyclerView.setLayoutManager(mGridLayoutManager);
 
         // 리사이클러뷰에 CardAdapter 객체 지정.
-        adapter = new CardAdapter(MainActivity.list) ;
+        adapter = new CardAdapter(TabActivity.list) ;
 
         AppBarLayout appBar = activity.findViewById(R.id.appbar);
         appBar.setOnClickListener(new View.OnClickListener() {
@@ -200,8 +212,15 @@ public class SecondFragment extends Fragment {
                 if(data.getData()!=null){
                     try{
                         photoURI = data.getData();
+
+                        path = getPathFromURI(photoURI);
+
+                        File f = new File(path);
+                        upload(f);
+
+
                         //이미지뷰에 이미지 셋팅
-                        if (!MainActivity.list.add(photoURI))
+                        if (!TabActivity.list.add(photoURI))
                             Toast.makeText(activity, "list add failed", Toast.LENGTH_SHORT).show();
                     }catch (Exception e){
                         e.printStackTrace();
@@ -216,7 +235,7 @@ public class SecondFragment extends Fragment {
                     Log.v("알림", "FROM_CAMERA 처리");
                     galleryAddPic();
                     //이미지뷰에 이미지셋팅
-                    if (!MainActivity.list.add(imgUri))
+                    if (!TabActivity.list.add(imgUri))
                         Toast.makeText(activity, "list add failed", Toast.LENGTH_SHORT).show();
                 }catch (Exception e){
                     e.printStackTrace();
@@ -312,31 +331,26 @@ public class SecondFragment extends Fragment {
 
     }
 
-    private Double convertToDegree(String stringDMS){
-        Double result = null;
-        String[] DMS = stringDMS.split(",", 3);
+    private String getPathFromURI(Uri contentUri) {
+        String[] proj = { MediaStore.Images.Media.DATA };
+        CursorLoader loader = new CursorLoader(mContext, contentUri, proj, null, null, null);
+        Cursor cursor = loader.loadInBackground();
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        cursor.moveToFirst();
+        return cursor.getString(column_index);
+    }
 
-        String[] stringD = DMS[0].split("/", 2);
-        Double D0 = Double.valueOf(stringD[0]);
-        Double D1 = Double.valueOf(stringD[1]);
-        Double FloatD = D0/D1;
-
-        String[] stringM = DMS[1].split("/", 2);
-        Double M0 = Double.valueOf(stringM[0]);
-        Double M1 = Double.valueOf(stringM[1]);
-        Double FloatM = M0/M1;
-
-        String[] stringS = DMS[2].split("/", 2);
-        Double S0 = Double.valueOf(stringS[0]);
-        Double S1 = Double.valueOf(stringS[1]);
-        Double FloatS = S0/S1;
-
-        result = FloatD + (FloatM / 60) + (FloatS / 3600);
-
-        return result;
-
-
-    };
+    private void upload(File file) {
+        MainActivity.compositeDisposable.add(MainActivity.iMyService.uploadImage(file)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<String>() {
+                    @Override
+                    public void accept(String response) throws Exception {
+                        Toast.makeText(mContext, ""+response, Toast.LENGTH_SHORT).show();
+                    }
+                }));
+    }
 
 
 }
