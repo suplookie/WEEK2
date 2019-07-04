@@ -24,20 +24,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -49,17 +40,15 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private ArrayList<String> mImageNames = new ArrayList<>();
     private ArrayList<Bitmap> mImages = new ArrayList<>();
     private ArrayList<String> mPhoneNo = new ArrayList<>();
-    static ArrayList<String> mLocation = new ArrayList<>();
     private Context mContext;
     int i = 0;
 
 
-    public RecyclerViewAdapter(Context Context, ArrayList<String> ImageNames, ArrayList<Bitmap> Images, ArrayList<String> PhoneNo, ArrayList<String> Location) {
+    public RecyclerViewAdapter(Context Context, ArrayList<String> ImageNames, ArrayList<Bitmap> Images, ArrayList<String> PhoneNo) {
         this.mImageNames = ImageNames;
         this.mImages = Images;
         this.mContext = Context;
         this.mPhoneNo = PhoneNo;
-        this.mLocation = Location;
     }
 
     @NonNull
@@ -99,14 +88,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                     @Override
                     public void run() {
                         if (i==1){
-                            Log.d(TAG, "onClick : clicked on : " + mLocation.get(position));
-
-                            if(mLocation.get(position) == "NO ADDRESS ADDED") {
-                                Toast.makeText(mContext, mLocation.get(position), LENGTH_SHORT).show();
-                            }else{
-                                Toast.makeText(mContext, mLocation.get(position).substring(0, mLocation.get(position).length() - 8), LENGTH_SHORT).show();
-                            }
-                        }else if (i==2){
                             Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(mPhoneNo.get(position)));
                             String[] projection = new String[]{ ContactsContract.PhoneLookup._ID };
 
@@ -126,7 +107,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                         i=0;
                     }
                 }, 200);
-                FirstFragment.isContactRead = false;
             }
         });
 

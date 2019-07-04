@@ -1,6 +1,5 @@
 package com.example.week2;
 
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -23,9 +22,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
@@ -49,12 +45,9 @@ public class FirstFragment extends Fragment {
     private ArrayList<String> mNames = new ArrayList<>();
     private ArrayList<Bitmap> mImage = new ArrayList<Bitmap>();
     private ArrayList<String> mPhoneNo = new ArrayList<>();
-    private ArrayList<String> mLocation = new ArrayList<>();
 
 
     FloatingActionButton add_contacts;
-    boolean isMenuOpen = false;
-    static boolean isContactRead = false;
     View rootView;
 
 
@@ -70,25 +63,19 @@ public class FirstFragment extends Fragment {
 
         final RecyclerView recyclerView = rootView.findViewById(R.id.recyclerv_view);
 
-        final RecyclerViewAdapter adapter = new RecyclerViewAdapter(getActivity(), mNames, mImage, mPhoneNo, mLocation);
+        final RecyclerViewAdapter adapter = new RecyclerViewAdapter(getActivity(), mNames, mImage, mPhoneNo);
 
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        isContactRead = false;
 
 
         add_contacts = rootView.findViewById(R.id.add_contact);
 
-        if(!isContactRead){
-            LoadContacts();
+        LoadContacts();
 
-            recyclerView.setAdapter(adapter);
-            recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-
-            isContactRead = true;
-
-        }
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         add_contacts.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -97,8 +84,6 @@ public class FirstFragment extends Fragment {
                 intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
 
                 startActivityForResult(intent, ADD_CONTACTS);
-
-                isContactRead = false;
             }
         });
         return rootView;
@@ -107,20 +92,17 @@ public class FirstFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(resultCode != Activity.RESULT_OK){
             Toast.makeText(getActivity(), "result code: "+ resultCode, Toast.LENGTH_SHORT).show();mImage.clear();
             mPhoneNo.clear();
             mNames.clear();
 
             final RecyclerView recyclerView = rootView.findViewById(R.id.recyclerv_view);
 
-            final RecyclerViewAdapter adapter = new RecyclerViewAdapter(getActivity(), mNames, mImage, mPhoneNo, mLocation);
+            final RecyclerViewAdapter adapter = new RecyclerViewAdapter(getActivity(), mNames, mImage, mPhoneNo);
 
             recyclerView.setAdapter(adapter);
             recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
             LoadContacts();
-            return;
-        }
     }
 
 
@@ -130,7 +112,6 @@ public class FirstFragment extends Fragment {
         mNames.clear();
         mPhoneNo.clear();
         mImage.clear();
-        mLocation.clear();
 
         Log.d(TAG, "iniImageBitmaps : preparing bitmaps.");
 
@@ -166,20 +147,6 @@ public class FirstFragment extends Fragment {
             }else{
                 photo = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_launcher_foreground);
                 mImage.add(photo);
-            }
-
-
-
-            Uri postal_uri = ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI;
-            Cursor postal_cursor  = getActivity().getContentResolver().query(postal_uri,null,  ContactsContract.Data.CONTACT_ID + "="+ id.toString(), null,null);
-
-            if (postal_cursor.moveToNext()) {
-                String Strt = postal_cursor.getString(postal_cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.STREET));
-                String Cty = postal_cursor.getString(postal_cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.CITY));
-                String cntry = postal_cursor.getString(postal_cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY));
-                mLocation.add(Strt + Cty + cntry);
-            } else {
-                mLocation.add("NO ADDRESS ADDED");
             }
         }
 

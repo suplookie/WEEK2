@@ -37,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
 
     static CompositeDisposable compositeDisposable = new CompositeDisposable();
     static IMyService iMyService;
-    String user;
+    public String user;
+    public String userMail = null;
 
     @Override
     protected void onStop() {
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (loginUser(edt_login_email.getText().toString(), edtlogin_password.getText().toString()) != null) {
-                    Toast.makeText(MainActivity.this, "hello " + user, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "hello " + user + "\nemail: " + userMail, Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(MainActivity.this, TabActivity.class);
                     startActivity(intent);
                 }
@@ -152,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
                                 }
 
                                 deleteUser(edt_register_email.getText().toString(), edt_register_password.getText().toString());
-                                //Toast.makeText(Login.this, "deletion not implemented yet", Toast.LENGTH_SHORT).show();
 
 
                             }
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
                 }));
     }
 
-    private String  loginUser(String email, String password) {
+    private String  loginUser(final String email, String password) {
         if (TextUtils.isEmpty(email)) {
             Toast.makeText(this, "Email cannot be null or empty", Toast.LENGTH_SHORT).show();
             return null;
@@ -207,6 +207,7 @@ public class MainActivity extends AppCompatActivity {
                         //Toast.makeText(MainActivity.this, ""+response, Toast.LENGTH_SHORT).show();
                         user = response;
                         if (("" + response).equals("\"Wrong password\"")) user = null;
+                        else userMail = email;
                     }
                 }));
         return user;
