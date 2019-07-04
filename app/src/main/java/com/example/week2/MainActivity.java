@@ -1,6 +1,8 @@
 package com.example.week2;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -22,6 +24,20 @@ import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
@@ -30,19 +46,15 @@ import retrofit2.Retrofit;
 
 public class MainActivity extends AppCompatActivity {
 
-
-    TextView txt_create_account, txt_delete_account;
-    MaterialEditText edt_login_email, edtlogin_password;
+    TextView txt_create_account, txt_delete_account, mResult;
+    MaterialEditText edt_login_email, edt_login_password;
     Button login_btn, facebook_login;
 
-    static CompositeDisposable compositeDisposable = new CompositeDisposable();
-    static IMyService iMyService;
     public String user;
     public String userMail = null;
 
     @Override
     protected void onStop() {
-        compositeDisposable.clear();
         super.onStop();
     }
 
@@ -51,22 +63,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Init Service
-        Retrofit retrofitClient = RetrofitClient.getInstance();
-        iMyService = retrofitClient.create(IMyService.class);
-
         //Init view
         edt_login_email = findViewById(R.id.edit_email);
-        edtlogin_password = findViewById(R.id.edit_password);
+        edt_login_password = findViewById(R.id.edit_password);
         login_btn = findViewById(R.id.button_login);
         login_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (loginUser(edt_login_email.getText().toString(), edtlogin_password.getText().toString()) != null) {
-                    Toast.makeText(MainActivity.this, "hello " + user + "\nemail: " + userMail, Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(MainActivity.this, TabActivity.class);
-                    startActivity(intent);
-                }
             }
         });
 
@@ -74,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
         facebook_login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(MainActivity.this, "Service in preparation", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -82,137 +84,157 @@ public class MainActivity extends AppCompatActivity {
         txt_create_account.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final View register_layout = LayoutInflater.from(MainActivity.this).inflate(R.layout.register_layout, null);
-                new MaterialStyledDialog.Builder(MainActivity.this)
-                        .setTitle("REGISTRATION")
-                        .setDescription("Please fill out all fields")
-                        .setCustomView(register_layout).setNegativeText("CANCEL")
-                        .onNegative(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .setPositiveText("REGISTER")
-                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                MaterialEditText edt_register_email = register_layout.findViewById(R.id.edit_email);
-                                MaterialEditText edt_register_password = register_layout.findViewById(R.id.edit_password);
-                                MaterialEditText edt_register_name = register_layout.findViewById(R.id. edit_name);
 
-                                if (TextUtils.isEmpty(edt_register_email.getText().toString())) {
-                                    Toast.makeText(MainActivity.this, "Email cannot be null or empty", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                if (TextUtils.isEmpty(edt_register_password.getText().toString())) {
-                                    Toast.makeText(MainActivity.this, "Password cannot be null or empty", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                if (TextUtils.isEmpty(edt_register_name.getText().toString())) {
-                                    Toast.makeText(MainActivity.this, "Name cannot be null or empty", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                registerUser(edt_register_email.getText().toString(), edt_register_name.getText().toString(), edt_register_password.getText().toString());
-
-
-                            }
-                        }).show();
             }
         });
 
-        txt_delete_account = findViewById(R.id.txt_delete_account);
-        txt_delete_account.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                final View register_layout = LayoutInflater.from(MainActivity.this).inflate(R.layout.delete_layout, null);
-                new MaterialStyledDialog.Builder(MainActivity.this)
-                        .setTitle("DELETE ACCOUNT")
-                        .setDescription("Please fill out all fields")
-                        .setCustomView(register_layout).setNegativeText("CANCEL")
-                        .onNegative(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .setPositiveText("DELETE")
-                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                MaterialEditText edt_register_email = register_layout.findViewById(R.id.edit_email);
-                                MaterialEditText edt_register_password = register_layout.findViewById(R.id.edit_password);
+        mResult = findViewById(R.id.txt_delete_account);
 
-                                if (TextUtils.isEmpty(edt_register_email.getText().toString())) {
-                                    Toast.makeText(MainActivity.this, "Email cannot be null or empty", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                if (TextUtils.isEmpty(edt_register_password.getText().toString())) {
-                                    Toast.makeText(MainActivity.this, "Password cannot be null or empty", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
+        new GetDataTask().execute("http://143.248.36.204:8080/api/books");
+    }
 
-                                deleteUser(edt_register_email.getText().toString(), edt_register_password.getText().toString());
+    class GetDataTask extends AsyncTask<String, Void, String> {
 
+        ProgressDialog progressDialog;
 
-                            }
-                        }).show();
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Loading data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return getData(params[0]);
             }
-        });
-
-
-    }
-
-    private void registerUser(String email, String name, String password) {
-        compositeDisposable.add(iMyService.registerUser(email, name, password)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String response) throws Exception {
-                        Toast.makeText(MainActivity.this, ""+response, Toast.LENGTH_SHORT).show();
-                    }
-                }));
-    }
-
-    private void deleteUser(String email, String password) {
-        compositeDisposable.delete(iMyService.deleteUser(email, password)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String response) throws Exception {
-                        Toast.makeText(MainActivity.this, ""+response, Toast.LENGTH_SHORT).show();
-                    }
-                }));
-    }
-
-    private String  loginUser(final String email, String password) {
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(this, "Email cannot be null or empty", Toast.LENGTH_SHORT).show();
-            return null;
-        }
-        if (TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Password cannot be null or empty", Toast.LENGTH_SHORT).show();
-            return null;
+            catch (IOException ex){
+                return "Network error !";
+            }
         }
 
+        @Override
+        protected void onPostExecute (String result) {
+            super.onPostExecute(result);
 
-        compositeDisposable.add(iMyService.loginUser(email, password)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String response) throws Exception {
-                        //Toast.makeText(MainActivity.this, ""+response, Toast.LENGTH_SHORT).show();
-                        user = response;
-                        if (("" + response).equals("\"Wrong password\"")) user = null;
-                        else userMail = email;
-                    }
-                }));
-        return user;
+            mResult.setText(result);
 
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String getData (String urlPath) throws IOException {
+            StringBuilder result = new StringBuilder();
+            BufferedReader bufferedReader = null;
+            try{
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("GET");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.connect();
+
+                //Read response
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) !=  null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if(bufferedReader != null) {
+                    bufferedReader.close();
+                }
+            }
+
+            return result.toString();
+        }
     }
-    final boolean[] result = {false};
 
+    class PostDataTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Inserting data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return postData(params[0]);
+            } catch (IOException ex) {
+                return "Network error !";
+            } catch (JSONException ex) {
+                return "Data invalid !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            mResult.setText(result);
+
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String postData(String urlPath) throws IOException, JSONException {
+
+            StringBuilder result = new StringBuilder();
+            BufferedWriter bufferedWriter = null;
+            BufferedReader bufferedReader = null;
+
+            try {
+                //Create data to send
+                JSONObject dataToSend = new JSONObject();
+                dataToSend.put("title", "Wuthering Heights");
+                dataToSend.put("author", "Emily Bronte");
+
+                //Init and config request, then connect to server
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoOutput(true); //enable output
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.connect();
+
+                //Write data into server
+                OutputStream outputStream = urlConnection.getOutputStream();
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+                bufferedWriter.write(dataToSend.toString());
+                bufferedWriter.flush();
+
+                //Read data response from server
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if (bufferedReader != null) {
+                    bufferedReader.close();
+                }
+                if (bufferedWriter != null) {
+                    bufferedWriter.close();
+                }
+            }
+            return result.toString();
+        }
+    }
 }

@@ -1,5 +1,7 @@
 *.iml
 .gradle
+/node_modules
+/node_js_auth_mongodb
 /local.properties
 /.idea/caches
 /.idea/libraries
