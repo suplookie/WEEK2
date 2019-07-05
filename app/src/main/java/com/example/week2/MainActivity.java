@@ -17,9 +17,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.example.week2.Retrofit.IMyService;
-import com.example.week2.Retrofit.LoginInfo;
-import com.example.week2.Retrofit.RetrofitClient;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
@@ -42,7 +39,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,31 +58,31 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //Init view
-        edt_login_email = findViewById(R.id.edit_email);
-        edt_login_password = findViewById(R.id.edit_password);
-        login_btn = findViewById(R.id.button_login);
-        login_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-            }
-        });
-
-        facebook_login = findViewById(R.id.facebook);
-        facebook_login.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-            }
-        });
-
-        txt_create_account = findViewById(R.id.txt_create_account);
-        txt_create_account.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
+//
+//        //Init view
+//        edt_login_email = findViewById(R.id.edit_email);
+//        edt_login_password = findViewById(R.id.edit_password);
+//        login_btn = findViewById(R.id.button_login);
+//        login_btn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//            }
+//        });
+//
+//        facebook_login = findViewById(R.id.facebook);
+//        facebook_login.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//            }
+//        });
+//
+//        txt_create_account = findViewById(R.id.txt_create_account);
+//        txt_create_account.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//
+//            }
+//        });
 
         mResult = findViewById(R.id.txt_delete_account);
 

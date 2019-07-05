@@ -209,10 +209,10 @@ public class SecondFragment extends Fragment {
                     try{
                         photoURI = data.getData();
 
-                        path = getPathFromURI(photoURI);
-
-                        File f = new File(path);
-                        upload(f);
+//                        path = getPathFromURI(photoURI);
+//
+//                        File f = new File(path);
+//                        upload(f);
 
 
                         //이미지뷰에 이미지 셋팅
@@ -327,26 +327,26 @@ public class SecondFragment extends Fragment {
 
     }
 
-    private String getPathFromURI(Uri contentUri) {
-        String[] proj = { MediaStore.Images.Media.DATA };
-        CursorLoader loader = new CursorLoader(mContext, contentUri, proj, null, null, null);
-        Cursor cursor = loader.loadInBackground();
-        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-        cursor.moveToFirst();
-        return cursor.getString(column_index);
-    }
-
-    private void upload(File file) {
-        MainActivity.compositeDisposable.add(MainActivity.iMyService.uploadImage(file)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String response) throws Exception {
-                        Toast.makeText(mContext, ""+response, Toast.LENGTH_SHORT).show();
-                    }
-                }));
-    }
+//    private String getPathFromURI(Uri contentUri) {
+//        String[] proj = { MediaStore.Images.Media.DATA };
+//        CursorLoader loader = new CursorLoader(mContext, contentUri, proj, null, null, null);
+//        Cursor cursor = loader.loadInBackground();
+//        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+//        cursor.moveToFirst();
+//        return cursor.getString(column_index);
+//    }
+//
+//    private void upload(File file) {
+//        MainActivity.compositeDisposable.add(MainActivity.iMyService.uploadImage(file)
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Consumer<String>() {
+//                    @Override
+//                    public void accept(String response) throws Exception {
+//                        Toast.makeText(mContext, ""+response, Toast.LENGTH_SHORT).show();
+//                    }
+//                }));
+//    }
 
 
 }
