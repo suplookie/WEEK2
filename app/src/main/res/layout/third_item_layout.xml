@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="15dp"
+    android:id="@+id/parent_layout">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Name"
+        android:id="@+id/cafe_name"
+        android:layout_toRightOf="@+id/image"
+        android:textColor="#000"
+        android:layout_marginTop="5dp"
+        android:layout_marginLeft="40dp"
+        android:textSize="23sp"/>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/star_1"
+        android:src="@drawable/border_star"
+        android:layout_toRightOf="@+id/image"
+        android:layout_marginTop="40dp"
+        android:layout_marginLeft="40dp"/>
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/star_2"
+        android:src="@drawable/border_star"
+        android:layout_toRightOf="@+id/star_1"
+        android:layout_marginTop="40dp"/>
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/star_3"
+        android:src="@drawable/border_star"
+        android:layout_toRightOf="@+id/star_2"
+        android:layout_marginTop="40dp"/>
+
+    <ImageView
+        android:id="@+id/star_4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/border_star"
+        android:layout_toRightOf="@+id/star_3"
+        android:layout_marginTop="40dp"/>
+
+    <ImageView
+        android:id="@+id/star_5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/border_star"
+        android:layout_toRightOf="@+id/star_4"
+        android:layout_marginTop="40dp" />
+
+</RelativeLayout>

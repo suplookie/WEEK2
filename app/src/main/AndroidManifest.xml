@@ -32,6 +32,7 @@
 
         <activity android:name=".ImgActivity" />
         <activity android:name=".TabActivity" />
+        <activity android:name=".Choosemenu" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
