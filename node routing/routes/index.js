@@ -1,7 +1,8 @@
 module.exports = function(app, Account)
 {
+  var Contact = require('../models/contact');
     //get all accounts
-   app.get('/api/accounts', function(req, res){
+   app.get('/accounts', function(req, res){
       Account.find(function(err, accounts){
          if(err) return res.status(500).send({error: 'database failure'});
          res.json(accounts);
@@ -29,29 +30,56 @@ module.exports = function(app, Account)
   // login and return username
   app.post('/login', function(req, res){
     Account.findOne({userName: req.body.userName}, function(err, account){
-      if(err) return res.status(401).json({error: 'no such username'});
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!account) return res.status(404).json({error: 'account not found'})
       if(account.password != req.body.password) return res.status(401).json({error: 'password incorrect'});
       res.json(account.userName);
     })
   });
 
-  // GET SINGLE BOOK
-  app.get('/api/books/:book_id', function(req, res){
-    Account.findOne({_id: req.params.book_id}, function(err, book){
-        if(err) return res.status(500).json({error: err});
-        if(!book) return res.status(404).json({error: 'book not found'});
-        res.json(book);
+  // get contact list
+  app.get('/contacts/:userName', function(req, res){
+    Account.findOne({userName: req.params.userName}, function(err, account){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!account) return res.status(404).json({error: 'account not found'});
+      res.json(account.contacts);
     })
   });
 
-  // GET BOOK BY AUTHOR
-  app.get('/api/books/author/:author', function(req, res){
-    Account.find({author: req.params.author}, {_id: 0, title: 1, published_date: 1},  function(err, books){
-        if(err) return res.status(500).json({error: err});
-        if(books.length === 0) return res.status(404).json({error: 'book not found'});
-        res.json(books);
+  // add contact
+  app.post('/contacts/:userName', function(req, res){
+    // var contact = new Contact();
+    // contact.name = req.body.name;
+    // contact.phoneNumber = req.body.phoneNumber;
+
+    Account.findOne({userName: req.params.userName}, function(err, account){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!account) return res.status(404).json({error: 'account not found'});
+      
+      var contact = new Contact();
+      if(req.body.name) contact.name = req.body.name;
+      if(req.body.phoneNumber) contact.phoneNumber = req.body.phoneNumber;
+      account.contacts.push(contact);
+      
+      account.save(function(err){
+        if(err) res.status(500).json({error: 'failed to update'});
+        res.json({message: 'updated'});
+      })
     })
   });
+
+
+  //   contact.save(function(err){
+  //      if(err){
+  //         console.error(err);
+  //         res.json({result: 0});
+  //         return;
+  //      }
+
+  //      res.json({result: 1});
+
+  //   });
+  // });
 
   
 

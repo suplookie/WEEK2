@@ -15,6 +15,7 @@ var port = process.env.PORT || 8080;
 
 // DEFINE MODEL
 var Account = require('./models/account');
+// var Contact = require('./models/contact');
 
 // [CONFIGURE ROUTER]
 var router = require('./routes')(app, Account);
