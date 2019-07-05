@@ -245,8 +245,6 @@ public class SecondFragment extends Fragment {
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         adapter.notifyDataSetChanged();

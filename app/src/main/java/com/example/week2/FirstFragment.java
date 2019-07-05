@@ -1,5 +1,6 @@
 package com.example.week2;
 
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -7,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
@@ -21,8 +23,20 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.gson.Gson;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 
 
@@ -152,7 +166,153 @@ public class FirstFragment extends Fragment {
 
     }
 
+    class GetDataTask extends AsyncTask<String, Void, String> {
 
+        ProgressDialog progressDialog;
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Loading data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return getData(params[0]);
+            }
+            catch (IOException ex){
+                return "Network error !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute (String result) {
+            super.onPostExecute(result);
+
+            //mResult.setText(result);
+
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String getData (String urlPath) throws IOException {
+            StringBuilder result = new StringBuilder();
+            BufferedReader bufferedReader = null;
+            try{
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("GET");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                Log.i("connect", "before");
+                urlConnection.connect();
+                Log.i("connect", "after");
+
+                //Read response
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) !=  null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if(bufferedReader != null) {
+                    bufferedReader.close();
+                }
+            }
+            Gson gson = new Gson();
+            //result.toJson();
+            return result.toString();
+        }
+    }
+
+    class PostDataTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Inserting data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return postData(params[0]);
+            } catch (IOException ex) {
+                return "Network error !";
+            } catch (JSONException ex) {
+                return "Data invalid !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            //mResult.setText(result);
+
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String postData(String urlPath) throws IOException, JSONException {
+
+            StringBuilder result = new StringBuilder();
+            BufferedWriter bufferedWriter = null;
+            BufferedReader bufferedReader = null;
+
+            try {
+                //Create data to send
+                JSONObject dataToSend = new JSONObject();
+                dataToSend.put("userName", MainActivity.user);
+                dataToSend.put("name", "Wuthering Heights");
+                dataToSend.put("phoneNumber", "Emily Bronte");
+
+                //Init and config request, then connect to server
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoOutput(true); //enable output
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.connect();
+
+                //Write data into server
+                OutputStream outputStream = urlConnection.getOutputStream();
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+                bufferedWriter.write(dataToSend.toString());
+                bufferedWriter.flush();
+
+                //Read data response from server
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if (bufferedReader != null) {
+                    bufferedReader.close();
+                }
+                if (bufferedWriter != null) {
+                    bufferedWriter.close();
+                }
+            }
+            return result.toString();
+        }
+    }
 }
 

@@ -11,8 +11,8 @@
         <com.rengwuxian.materialedittext.MaterialEditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/edit_email"
-            android:hint="Email"
+            android:id="@+id/edit_name"
+            android:hint="Name"
             android:inputType="textEmailAddress" />
 
         <com.rengwuxian.materialedittext.MaterialEditText
@@ -21,12 +21,6 @@
             android:id="@+id/edit_password"
             android:hint="Password"
             android:inputType="textPassword" />
-        <com.rengwuxian.materialedittext.MaterialEditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/edit_name"
-            android:hint="Name"
-            android:inputType="text" />
     </LinearLayout>
 
 </LinearLayout>

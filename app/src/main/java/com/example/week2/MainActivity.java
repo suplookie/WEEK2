@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
+import com.google.gson.Gson;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     MaterialEditText edt_login_email, edt_login_password;
     Button login_btn, facebook_login;
 
-    public String user;
+    public static String user;
     public String userMail = null;
 
     @Override
@@ -86,7 +87,18 @@ public class MainActivity extends AppCompatActivity {
 
         mResult = findViewById(R.id.txt_delete_account);
 
-        new GetDataTask().execute("http://143.248.36.204:8080/api/books");
+        //new GetDataTask().execute("http://143.248.36.204:8080/api/accounts");
+
+        final TextView name = findViewById(R.id.edit_name);
+        final TextView password = findViewById(R.id.edit_password);
+
+        Button button = findViewById(R.id.button_login);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new PostDataTask().execute("http://143.248.36.204:8080/login", name.toString(), password.toString());
+            }
+        });
     }
 
     class GetDataTask extends AsyncTask<String, Void, String> {
@@ -133,7 +145,9 @@ public class MainActivity extends AppCompatActivity {
                 urlConnection.setConnectTimeout(10000);
                 urlConnection.setRequestMethod("GET");
                 urlConnection.setRequestProperty("Content-Type", "application/json");
+                Log.i("connect", "before");
                 urlConnection.connect();
+                Log.i("connect", "after");
 
                 //Read response
                 InputStream inputStream = urlConnection.getInputStream();
@@ -147,7 +161,8 @@ public class MainActivity extends AppCompatActivity {
                     bufferedReader.close();
                 }
             }
-
+            Gson gson = new Gson();
+            //result.toJson();
             return result.toString();
         }
     }
@@ -168,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(String... params) {
 
             try {
-                return postData(params[0]);
+                return postData(params[0], params[1], params[2]);
             } catch (IOException ex) {
                 return "Network error !";
             } catch (JSONException ex) {
@@ -180,14 +195,20 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
 
-            mResult.setText(result);
+            //mResult.setText(result);
 
             if (progressDialog != null) {
                 progressDialog.dismiss();
             }
+            if (result != null) {
+                user = result;
+                Intent intent = new Intent(getApplicationContext(), TabActivity.class);
+                startActivity(intent);
+            }
+
         }
 
-        private String postData(String urlPath) throws IOException, JSONException {
+        private String postData(String urlPath, String userName, String password) throws IOException, JSONException {
 
             StringBuilder result = new StringBuilder();
             BufferedWriter bufferedWriter = null;
@@ -196,8 +217,8 @@ public class MainActivity extends AppCompatActivity {
             try {
                 //Create data to send
                 JSONObject dataToSend = new JSONObject();
-                dataToSend.put("title", "Wuthering Heights");
-                dataToSend.put("author", "Emily Bronte");
+                dataToSend.put("userName", userName);
+                dataToSend.put("password", password);
 
                 //Init and config request, then connect to server
                 URL url = new URL(urlPath);
