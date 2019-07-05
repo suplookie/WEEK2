@@ -2,20 +2,14 @@ package com.example.week2;
 
 
 import android.content.Context;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
-import java.util.ArrayList;
-import java.util.zip.Inflater;
 
 public class MyAdapter extends BaseAdapter {
     ItemData[] stringArray;
@@ -55,7 +49,7 @@ public class MyAdapter extends BaseAdapter {
         RelativeLayout layout = view.findViewById(R.id.parent_layout);
         layout.setOnClickListener(stringArray[i].onClickListener);
 
-        if (stringArray[i].mrate > 0) {
+        if (stringArray[i].mrate >= 0) {
             ImageView star = view.findViewById(R.id.star_1);
             star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
             star = view.findViewById(R.id.star_2);
