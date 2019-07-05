@@ -307,13 +307,11 @@ public class SecondFragment extends Fragment {
             @Override
             public void onPermissionGranted() {
                 // 권한 요청 성공
-                Toast.makeText(activity, "Permission Granted", Toast.LENGTH_SHORT).show();
 
             }
 
             @Override
             public void onPermissionDenied(List<String> deniedPermissions) {
-                Toast.makeText(activity, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
             }
         };
 

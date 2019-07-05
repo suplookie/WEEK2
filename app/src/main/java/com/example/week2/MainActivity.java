@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,16 +88,56 @@ public class MainActivity extends AppCompatActivity {
 
         mResult = findViewById(R.id.txt_delete_account);
 
+        TextView register = findViewById(R.id.txt_create_account);
+        register.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final View register_layout = LayoutInflater.from(MainActivity.this).inflate(R.layout.register_layout, null);
+                new MaterialStyledDialog.Builder(MainActivity.this)
+                        .setTitle("REGISTRATION")
+                        .setDescription("Please fill out all fields")
+                        .setCustomView(register_layout).setNegativeText("CANCEL")
+                        .onNegative(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setPositiveText("REGISTER")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                MaterialEditText edt_register_password = register_layout.findViewById(R.id.edit_password);
+                                MaterialEditText edt_register_name = register_layout.findViewById(R.id. edit_name);
+
+                                if (TextUtils.isEmpty(edt_register_password.getText().toString())) {
+                                    Toast.makeText(MainActivity.this, "Password cannot be null or empty", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                else if (TextUtils.isEmpty(edt_register_name.getText().toString())) {
+                                    Toast.makeText(MainActivity.this, "Name cannot be null or empty", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                else {
+                                    new Register().execute("http://143.248.36.204:8080/register", edt_register_name.getText().toString(), edt_register_password.getText().toString());
+                                }
+                            }
+                        }).show();
+            }
+        });
+
         //new GetDataTask().execute("http://143.248.36.204:8080/api/accounts");
 
-        final TextView name = findViewById(R.id.edit_name);
-        final TextView password = findViewById(R.id.edit_password);
+        final EditText name = findViewById(R.id.edit_name);
+        final EditText password = findViewById(R.id.edit_password);
+
 
         Button button = findViewById(R.id.button_login);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new PostDataTask().execute("http://143.248.36.204:8080/login", name.toString(), password.toString());
+                user = name.getText().toString();
+                new PostDataTask().execute("http://143.248.36.204:8080/login", name.getText().toString(), password.getText().toString());
             }
         });
     }
@@ -200,12 +241,94 @@ public class MainActivity extends AppCompatActivity {
             if (progressDialog != null) {
                 progressDialog.dismiss();
             }
-            if (result != null) {
-                user = result;
+            if (result.equals("\"" + user + "\"\n")) {
                 Intent intent = new Intent(getApplicationContext(), TabActivity.class);
+                Toast.makeText(getApplicationContext(), "Hello " + user, Toast.LENGTH_SHORT).show();
                 startActivity(intent);
             }
 
+        }
+
+        private String postData(String urlPath, String userName, String password) throws IOException, JSONException {
+
+            StringBuilder result = new StringBuilder();
+            BufferedWriter bufferedWriter = null;
+            BufferedReader bufferedReader = null;
+
+            try {
+                //Create data to send
+                JSONObject dataToSend = new JSONObject();
+                dataToSend.put("userName", userName);
+                dataToSend.put("password", password);
+
+                //Init and config request, then connect to server
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoOutput(true); //enable output
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.connect();
+
+                //Write data into server
+                OutputStream outputStream = urlConnection.getOutputStream();
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+                bufferedWriter.write(dataToSend.toString());
+                bufferedWriter.flush();
+
+                //Read data response from server
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if (bufferedReader != null) {
+                    bufferedReader.close();
+                }
+                if (bufferedWriter != null) {
+                    bufferedWriter.close();
+                }
+            }
+            return result.toString();
+        }
+    }
+
+    class Register extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Inserting data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return postData(params[0], params[1], params[2]);
+            } catch (IOException ex) {
+                return "Network error !";
+            } catch (JSONException ex) {
+                return "Data invalid !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            //mResult.setText(result);
+
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
         }
 
         private String postData(String urlPath, String userName, String password) throws IOException, JSONException {

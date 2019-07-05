@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -73,6 +74,7 @@ public class FirstFragment extends Fragment {
 
         rootView = inflater.inflate(R.layout.fragment_first, container, false);
 
+        new getContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user);
 
 
         final RecyclerView recyclerView = rootView.findViewById(R.id.recyclerv_view);
@@ -81,6 +83,10 @@ public class FirstFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+        for (int i = 0; i < mNames.size(); i++) {
+            //new addContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user, mNames.get(i), mPhoneNo.get(i));
+        }
 
 
 
@@ -117,6 +123,7 @@ public class FirstFragment extends Fragment {
             recyclerView.setAdapter(adapter);
             recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
             LoadContacts();
+            //new addContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user, mNames.get(mNames.size() - 1), mPhoneNo.get(mNames.size() - 1));
     }
 
 
@@ -166,7 +173,7 @@ public class FirstFragment extends Fragment {
 
     }
 
-    class GetDataTask extends AsyncTask<String, Void, String> {
+    class getContact extends AsyncTask<String, Void, String> {
 
         ProgressDialog progressDialog;
 
@@ -193,7 +200,19 @@ public class FirstFragment extends Fragment {
         protected void onPostExecute (String result) {
             super.onPostExecute(result);
 
-            //mResult.setText(result);
+            Toast.makeText(getContext(), result, Toast.LENGTH_LONG).show();
+            Log.i("연락처", result);
+
+            try{
+                JSONArray ja = new JSONArray(result);
+                for (int i = 0; i < ja.length(); i++){
+                    JSONObject order = ja.getJSONObject(i);
+                    mNames.add(order.getString("name"));
+                    mPhoneNo.add(order.getString("phoneNumber"));
+                    mImage.add(null);
+                }
+            }
+            catch (JSONException e){ ;}
 
             if (progressDialog != null) {
                 progressDialog.dismiss();
@@ -228,6 +247,89 @@ public class FirstFragment extends Fragment {
             }
             Gson gson = new Gson();
             //result.toJson();
+            return result.toString();
+        }
+    }
+
+    class addContact extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Inserting data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return postData(params[0]);
+            } catch (IOException ex) {
+                return "Network error !";
+            } catch (JSONException ex) {
+                return "Data invalid !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            //mResult.setText(result);
+
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String postData(String urlPath) throws IOException, JSONException {
+
+            StringBuilder result = new StringBuilder();
+            BufferedWriter bufferedWriter = null;
+            BufferedReader bufferedReader = null;
+
+            try {
+                //Create data to send
+                JSONObject dataToSend = new JSONObject();
+                dataToSend.put("userName", MainActivity.user);
+                dataToSend.put("name", "Wuthering Heights");
+                dataToSend.put("phoneNumber", "Emily Bronte");
+
+                //Init and config request, then connect to server
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoOutput(true); //enable output
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.connect();
+
+                //Write data into server
+                OutputStream outputStream = urlConnection.getOutputStream();
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+                bufferedWriter.write(dataToSend.toString());
+                bufferedWriter.flush();
+
+                //Read data response from server
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if (bufferedReader != null) {
+                    bufferedReader.close();
+                }
+                if (bufferedWriter != null) {
+                    bufferedWriter.close();
+                }
+            }
             return result.toString();
         }
     }
