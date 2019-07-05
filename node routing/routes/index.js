@@ -1,11 +1,38 @@
 module.exports = function(app, Account)
 {
-    //GET ALL BOOKS
-   app.get('/api/accounts', function(req,res){
+    //get all accounts
+   app.get('/api/accounts', function(req, res){
       Account.find(function(err, accounts){
          if(err) return res.status(500).send({error: 'database failure'});
          res.json(accounts);
      })
+  });
+
+  // register account
+  app.post('/register', function(req, res){
+    var account = new Account();
+    account.userName = req.body.userName;
+    account.password = req.body.password;
+
+    account.save(function(err){
+       if(err){
+          console.error(err);
+          res.json({result: 0});
+          return;
+       }
+
+       res.json({result: 1});
+
+    });
+  });
+
+  // login and return username
+  app.post('/login', function(req, res){
+    Account.findOne({userName: req.body.userName}, function(err, account){
+      if(err) return res.status(401).json({error: 'no such username'});
+      if(account.password != req.body.password) return res.status(401).json({error: 'password incorrect'});
+      res.json(account.userName);
+    })
   });
 
   // GET SINGLE BOOK
@@ -26,27 +53,7 @@ module.exports = function(app, Account)
     })
   });
 
-  // register account
-  app.post('/register', function(req, res){
-      var account = new Account();
-      account.email = req.body.email;
-      account.name = req.body.author;
-      account.password = req.body.author;
-      account.
-
-      
-
-      account.save(function(err){
-         if(err){
-            console.error(err);
-            res.json({result: 0});
-            return;
-         }
-
-         res.json({result: 1});
-
-      });
-  });
+  
 
   // UPDATE THE BOOK
   app.put('/api/books/:book_id', function(req, res){

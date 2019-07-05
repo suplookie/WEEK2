@@ -1,14 +1,16 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
+var ObjectId = Schema.Types.ObjectId;
+
+var contactSchema = new Schema({
+    name: String,
+    phoneNumber: String
+});
 
 var accountSchema = new Schema({
-    email: String,
-    name: String,
+    userName: String,
     password: String,
-    details: {
-        contact_id: String,
-        gallery_id: String
-    }
+    contacts : [contactSchema]
 });
 
 module.exports = mongoose.model('account', accountSchema);
