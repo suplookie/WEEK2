@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">WEEK2</string>
     <string name="title_activity_add_coord">Map</string>
+    <string name="facebook_app_id">853603568354994</string>
 </resources>

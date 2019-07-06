@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,8 +23,12 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
+import com.rengwuxian.materialedittext.MaterialEditText;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -84,10 +89,6 @@ public class FirstFragment extends Fragment {
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        for (int i = 0; i < mNames.size(); i++) {
-            //new addContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user, mNames.get(i), mPhoneNo.get(i));
-        }
-
 
 
         add_contacts = rootView.findViewById(R.id.add_contact);
@@ -100,12 +101,47 @@ public class FirstFragment extends Fragment {
         add_contacts.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                Intent intent = new Intent(ContactsContract.Intents.Insert.ACTION);
-                intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
+                final View register_layout = LayoutInflater.from(getContext()).inflate(R.layout.add_contact, null);
+                new MaterialStyledDialog.Builder(getContext())
+                        .setTitle("ADD CONTACT")
+                        .setDescription("Please fill out all fields")
+                        .setCustomView(register_layout).setNegativeText("CANCEL")
+                        .onNegative(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setPositiveText("ADD")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                MaterialEditText edt_register_phone = register_layout.findViewById(R.id.edit_number);
+                                MaterialEditText edt_register_name = register_layout.findViewById(R.id. edit_name);
 
-                startActivityForResult(intent, ADD_CONTACTS);
+                                if (TextUtils.isEmpty(edt_register_phone.getText().toString())) {
+                                    Toast.makeText(getContext(), "Number cannot be null or empty", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                else if (TextUtils.isEmpty(edt_register_name.getText().toString())) {
+                                    Toast.makeText(getContext(), "Name cannot be null or empty", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                else {
+                                    mNames.add(edt_register_name.getText().toString());
+                                    mPhoneNo.add(edt_register_phone.getText().toString());
+                                    mImage.add(null);
+                                    adapter.notifyDataSetChanged();
+
+
+                                    new addContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user, edt_register_name.getText().toString(), edt_register_phone.getText().toString());
+                                }
+                            }
+                        }).show();
             }
         });
+
+
         return rootView;
     }
 
@@ -123,7 +159,7 @@ public class FirstFragment extends Fragment {
             recyclerView.setAdapter(adapter);
             recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
             LoadContacts();
-            //new addContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user, mNames.get(mNames.size() - 1), mPhoneNo.get(mNames.size() - 1));
+            new addContact().execute("http://143.248.36.204:8080/contacts/" + MainActivity.user, mNames.get(mNames.size() - 1), mPhoneNo.get(mNames.size() - 1));
     }
 
 
@@ -199,8 +235,6 @@ public class FirstFragment extends Fragment {
         @Override
         protected void onPostExecute (String result) {
             super.onPostExecute(result);
-
-            Toast.makeText(getContext(), result, Toast.LENGTH_LONG).show();
             Log.i("연락처", result);
 
             try{
@@ -267,7 +301,7 @@ public class FirstFragment extends Fragment {
         protected String doInBackground(String... params) {
 
             try {
-                return postData(params[0]);
+                return postData(params[0], params[1], params[2]);
             } catch (IOException ex) {
                 return "Network error !";
             } catch (JSONException ex) {
@@ -286,7 +320,7 @@ public class FirstFragment extends Fragment {
             }
         }
 
-        private String postData(String urlPath) throws IOException, JSONException {
+        private String postData(String urlPath, String name, String phoneNumber) throws IOException, JSONException {
 
             StringBuilder result = new StringBuilder();
             BufferedWriter bufferedWriter = null;
@@ -296,8 +330,8 @@ public class FirstFragment extends Fragment {
                 //Create data to send
                 JSONObject dataToSend = new JSONObject();
                 dataToSend.put("userName", MainActivity.user);
-                dataToSend.put("name", "Wuthering Heights");
-                dataToSend.put("phoneNumber", "Emily Bronte");
+                dataToSend.put("name", name);
+                dataToSend.put("phoneNumber", phoneNumber);
 
                 //Init and config request, then connect to server
                 URL url = new URL(urlPath);

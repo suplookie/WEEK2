@@ -12,12 +12,10 @@ import android.widget.TextView;
 
 
 public class MyAdapter extends BaseAdapter {
-    ItemData[] stringArray;
     Context mContext;
     LayoutInflater inflater = null;
 
     public MyAdapter(Context context, ItemData[] cafeteria) {
-        stringArray = cafeteria;
         mContext = context;
     }
 
@@ -45,64 +43,69 @@ public class MyAdapter extends BaseAdapter {
         }
 
         TextView name = view.findViewById(R.id.cafe_name);
-        name.setText(stringArray[i].name);
+        name.setText(ThirdFragment.cafeteria[i].name);
         RelativeLayout layout = view.findViewById(R.id.parent_layout);
-        layout.setOnClickListener(stringArray[i].onClickListener);
+        layout.setOnClickListener(ThirdFragment.cafeteria[i].onClickListener);
 
-        if (stringArray[i].mrate >= 0) {
-            ImageView star = view.findViewById(R.id.star_1);
-            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
-            star = view.findViewById(R.id.star_2);
-            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
-            star = view.findViewById(R.id.star_3);
-            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
-            star = view.findViewById(R.id.star_4);
-            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
-            star = view.findViewById(R.id.star_5);
-            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
-
-            if (stringArray[i].mrate >= 0.5) {
-                star = view.findViewById(R.id.star_1);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
-            }
-            if (stringArray[i].mrate >= 1.0) {
-                star = view.findViewById(R.id.star_1);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
-            }
-            if (stringArray[i].mrate >= 1.5) {
-                star = view.findViewById(R.id.star_2);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
-            }
-            if (stringArray[i].mrate >= 2.0) {
-                star = view.findViewById(R.id.star_2);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
-            }
-            if (stringArray[i].mrate >= 2.5) {
-                star = view.findViewById(R.id.star_3);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
-            }
-            if (stringArray[i].mrate >= 3.0) {
-                star = view.findViewById(R.id.star_3);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
-            }
-            if (stringArray[i].mrate >= 3.5) {
-                star = view.findViewById(R.id.star_4);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
-            }
-            if (stringArray[i].mrate >= 4.0) {
-                star = view.findViewById(R.id.star_4);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
-            }
-            if (stringArray[i].mrate >= 4.5) {
-                star = view.findViewById(R.id.star_5);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
-            }
-            if (stringArray[i].mrate >= 5.0) {
-                star = view.findViewById(R.id.star_5);
-                star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
-            }
-        }
+        countStars(ThirdFragment.cafeteria[i].mrate, view);
+        TextView number = view.findViewById(R.id.number);
+        number.setText("(" + ThirdFragment.cafeteria[i].number + ")");
 
         return view;
+    }
+
+    void countStars(double rate, View view) {
+
+        ImageView star = view.findViewById(R.id.star_1);
+        star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
+        star = view.findViewById(R.id.star_2);
+        star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
+        star = view.findViewById(R.id.star_3);
+        star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
+        star = view.findViewById(R.id.star_4);
+        star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
+        star = view.findViewById(R.id.star_5);
+        star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.border_star));
+
+        if (rate >= 0.5) {
+            star = view.findViewById(R.id.star_1);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
+        }
+        if (rate >= 1.0) {
+            star = view.findViewById(R.id.star_1);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
+        }
+        if (rate >= 1.5) {
+            star = view.findViewById(R.id.star_2);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
+        }
+        if (rate >= 2.0) {
+            star = view.findViewById(R.id.star_2);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
+        }
+        if (rate >= 2.5) {
+            star = view.findViewById(R.id.star_3);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
+        }
+        if (rate >= 3.0) {
+            star = view.findViewById(R.id.star_3);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
+        }
+        if (rate >= 3.5) {
+            star = view.findViewById(R.id.star_4);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
+        }
+        if (rate >= 4.0) {
+            star = view.findViewById(R.id.star_4);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
+        }
+        if (rate >= 4.5) {
+            star = view.findViewById(R.id.star_5);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.half_star));
+        }
+        if (rate >= 5.0) {
+            star = view.findViewById(R.id.star_5);
+            star.setImageDrawable(mContext.getResources().getDrawable(R.drawable.full_star));
+        }
     }
 }

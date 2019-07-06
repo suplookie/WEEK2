@@ -24,9 +24,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
+import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 
 import java.util.ArrayList;
 
@@ -65,10 +69,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
         holder.getAdapterPosition();
 
-        Glide.with(mContext)
-                .asBitmap()
-                .load(mImages.get(position))
-                .into(holder.image);
+        if (mImages.get(position) != null)
+            Glide.with(mContext)
+                    .asBitmap()
+                    .load(mImages.get(position))
+                    .into(holder.image);
         holder.imageName.setText(mImageNames.get(position));
         if (holder.imageName.getText().length() > 13){
             holder.imageName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
@@ -81,32 +86,24 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.parentLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
-                i++;
-
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (i==1){
-                            Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(mPhoneNo.get(position)));
-                            String[] projection = new String[]{ ContactsContract.PhoneLookup._ID };
-
-                            Cursor cur = mContext.getContentResolver().query(uri, projection, null, null, null);
-
-                            if (cur != null && cur.moveToNext()) {
-                                Long id = cur.getLong(0);
-
-                                Intent intent = new Intent(Intent.ACTION_VIEW);
-                                Uri contactUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, String.valueOf(id));
-                                intent.setData(contactUri);
-                                mContext.startActivity(intent);
-
-                                cur.close();
+                final View register_layout = LayoutInflater.from(mContext).inflate(R.layout.show_contact, null);
+                new MaterialStyledDialog.Builder(mContext)
+                        .setDescription(mImageNames.get(position) + "\n" + mPhoneNo.get(position))
+                        .setIcon(R.drawable.call)
+                        .setCustomView(register_layout).setPositiveText("CALL")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                mContext.startActivity(new Intent("android.intent.action.DIAL", Uri.parse("tel:" + mPhoneNo.get(position))));
                             }
-                        }
-                        i=0;
-                    }
-                }, 200);
+                        })
+                        .setCustomView(register_layout).setNegativeText("CANCEL")
+                        .onNegative(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                dialog.dismiss();
+                            }
+                        }).show();
             }
         });
 
@@ -119,14 +116,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return mImageNames.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
+    class ViewHolder extends RecyclerView.ViewHolder{
 
         CircleImageView image;
         TextView imageName;
         TextView phoneNo;
         RelativeLayout parentLayout;
 
-        public ViewHolder(View itemView){
+        ViewHolder(View itemView){
             super(itemView);
             image = itemView.findViewById(R.id.image);
             imageName = itemView.findViewById(R.id.image_name);

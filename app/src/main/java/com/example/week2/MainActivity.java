@@ -18,6 +18,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.Profile;
+import com.facebook.ProfileTracker;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.google.gson.Gson;
 import com.rengwuxian.materialedittext.MaterialEditText;
@@ -55,36 +64,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
     }
+    CallbackManager callbackManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//
-//        //Init view
-//        edt_login_email = findViewById(R.id.edit_email);
-//        edt_login_password = findViewById(R.id.edit_password);
-//        login_btn = findViewById(R.id.button_login);
-//        login_btn.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//            }
-//        });
-//
-//        facebook_login = findViewById(R.id.facebook);
-//        facebook_login.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//            }
-//        });
-//
-//        txt_create_account = findViewById(R.id.txt_create_account);
-//        txt_create_account.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//
-//            }
-//        });
 
         mResult = findViewById(R.id.txt_delete_account);
 
@@ -131,6 +116,35 @@ public class MainActivity extends AppCompatActivity {
         final EditText name = findViewById(R.id.edit_name);
         final EditText password = findViewById(R.id.edit_password);
 
+        ProfileTracker profileTracker = new ProfileTracker() {
+            @Override
+            protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                successFB();
+            }
+        };
+        profileTracker.startTracking();
+
+        callbackManager = CallbackManager.Factory.create();
+        LoginButton facebook = findViewById(R.id.facebook);
+        facebook.setReadPermissions("email");
+
+        facebook.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                //successFB();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+
 
         Button button = findViewById(R.id.button_login);
         button.setOnClickListener(new View.OnClickListener() {
@@ -140,6 +154,19 @@ public class MainActivity extends AppCompatActivity {
                 new PostDataTask().execute("http://143.248.36.204:8080/login", name.getText().toString(), password.getText().toString());
             }
         });
+
+    }
+
+    void successFB() {
+        user = Profile.getCurrentProfile().getName();
+        new Register().execute("http://143.248.36.204:8080/register", user, "facebook");
+        new PostDataTask().execute("http://143.248.36.204:8080/login", user, "facebook");
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     class GetDataTask extends AsyncTask<String, Void, String> {
@@ -235,8 +262,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-
-            //mResult.setText(result);
 
             if (progressDialog != null) {
                 progressDialog.dismiss();

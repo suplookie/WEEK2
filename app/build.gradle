@@ -53,4 +53,7 @@ dependencies {
 
     implementation 'org.jsoup:jsoup:1.11.3'
 
+    implementation 'com.facebook.android:facebook-login:[5,6)'
+
+
 }
