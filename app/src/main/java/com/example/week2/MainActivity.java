@@ -1,7 +1,14 @@
 package com.example.week2;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -21,8 +28,6 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.GraphRequest;
-import com.facebook.GraphResponse;
 import com.facebook.Profile;
 import com.facebook.ProfileTracker;
 import com.facebook.login.LoginResult;
@@ -35,7 +40,6 @@ import com.rengwuxian.materialedittext.MaterialEditText;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -46,24 +50,27 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
-
 public class MainActivity extends AppCompatActivity {
 
-    TextView txt_create_account, txt_delete_account, mResult;
-    MaterialEditText edt_login_email, edt_login_password;
-    Button login_btn, facebook_login;
+    TextView mResult;
 
     public static String user;
-    public String userMail = null;
+
+
+    private static final String TAG = "ProximityTest";
+    private final String POI_REACHED =              // 공중파 방송의 채널 같은 역할. 임의로 정함.
+            "com.example.proximitytest.POI_REACHED";    //
+    private PendingIntent proximityIntent;
+
+    private final double sampleLatitude = 37.5;  // 목표 위치
+    private final double sampleLongitude = 127;
+
 
     @Override
     protected void onStop() {
         super.onStop();
     }
+
     CallbackManager callbackManager;
 
     @Override
@@ -71,7 +78,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        setupProximityAlert();  //방송국
+
         mResult = findViewById(R.id.txt_delete_account);
+
 
         TextView register = findViewById(R.id.txt_create_account);
         register.setOnClickListener(new View.OnClickListener() {
@@ -93,25 +103,21 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                                 MaterialEditText edt_register_password = register_layout.findViewById(R.id.edit_password);
-                                MaterialEditText edt_register_name = register_layout.findViewById(R.id. edit_name);
+                                MaterialEditText edt_register_name = register_layout.findViewById(R.id.edit_name);
 
                                 if (TextUtils.isEmpty(edt_register_password.getText().toString())) {
                                     Toast.makeText(MainActivity.this, "Password cannot be null or empty", Toast.LENGTH_SHORT).show();
                                     return;
-                                }
-                                else if (TextUtils.isEmpty(edt_register_name.getText().toString())) {
+                                } else if (TextUtils.isEmpty(edt_register_name.getText().toString())) {
                                     Toast.makeText(MainActivity.this, "Name cannot be null or empty", Toast.LENGTH_SHORT).show();
                                     return;
-                                }
-                                else {
+                                } else {
                                     new Register().execute("http://143.248.36.204:8080/register", edt_register_name.getText().toString(), edt_register_password.getText().toString());
                                 }
                             }
                         }).show();
             }
         });
-
-        //new GetDataTask().execute("http://143.248.36.204:8080/api/accounts");
 
         final EditText name = findViewById(R.id.edit_name);
         final EditText password = findViewById(R.id.edit_password);
@@ -162,6 +168,44 @@ public class MainActivity extends AppCompatActivity {
         new Register().execute("http://143.248.36.204:8080/register", user, "facebook");
         new PostDataTask().execute("http://143.248.36.204:8080/login", user, "facebook");
     }
+
+    private void setupProximityAlert() {
+        LocationManager locationManager = (LocationManager)
+                getSystemService(LOCATION_SERVICE);
+
+        Log.d(TAG, "start");
+
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            Log.d(TAG, "Registering ProximityAlert");
+            //방송 시작, 방송이름은 POI_REACHED, 누가 이방송을 필요하는지는 관심없음. 그냥 보내는...
+            Intent intent = new Intent(POI_REACHED);
+            proximityIntent =
+                    PendingIntent.getBroadcast(MainActivity.this, 0, intent,
+                            PendingIntent.FLAG_ONE_SHOT);
+            //방송 조건, 목표위치에 50미터 안으로 이동하면 10초간 경보 라는 방송을 보냄. 방송이름은POI_REACHED
+            //경보란게 먼지 모르겠음. 에뮬레이터에서 어떻게 확인 가능한지 모름.
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    Activity#requestPermissions
+                return;
+            }
+            locationManager.addProximityAlert(sampleLatitude,
+                    sampleLongitude, 50, 10000,
+                    proximityIntent);
+
+            /*================================================================*/
+            //시청자. POI_REACHED 이란 채널명으로 방송된 내용을 보려고 함.
+            IntentFilter intentFilter = new IntentFilter(POI_REACHED);
+            registerReceiver(new ProximityAlertReceiver(),
+                    intentFilter);
+            /*================================================================*/
+        } else {
+            Log.d(TAG, "GPS_PROVIDER not available");
+        }
+
+    }
+
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -403,3 +447,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+
+
+
+class ProximityAlertReceiver extends BroadcastReceiver
+{
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        //방송을 잘 잡으면 밑에 로그 한번 찍어줌.
+        // 지피에스 위치가 변해서 127, 37.5 로 되면 DDMS 에 아래 로그가 찍힘으로 확인 가능
+        Log.d("MyTag", "Proximity Alert was fired");
+        Toast.makeText(context, "gps received", Toast.LENGTH_SHORT).show();
+    }
+}
+

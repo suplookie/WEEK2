@@ -36,9 +36,9 @@ import java.util.ArrayList;
 public class Choosemenu extends AppCompatActivity{
 
     float rate;
-    static ArrayList<String> names = new ArrayList<>();
-    static ArrayList<Float> rates = new ArrayList<>();
-    static ArrayList<String> reviews = new ArrayList<>();
+    static ArrayList<String> names;
+    static ArrayList<Float> rates;
+    static ArrayList<String> reviews;
     RatingBar ratingBar;
     final ReviewAdapter adapter = new ReviewAdapter(Choosemenu.this);
     EditText review;
@@ -48,8 +48,13 @@ public class Choosemenu extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.choose_menu);
+        names = new ArrayList<>();
+        rates = new ArrayList<>();
+        reviews = new ArrayList<>();
 
-        new getReviews().execute("http://143.248.36.204:8080/" + ThirdFragment.cafeteria[ThirdFragment.cafe].name + "/reviews");
+        int i = ThirdFragment.cafe + 1;
+
+        new getReviews().execute("http://143.248.36.204:8080/place" + i + "/reviews");
         ratingBar = findViewById(R.id.stars);
         review = findViewById(R.id.review);
 
@@ -78,7 +83,8 @@ public class Choosemenu extends AppCompatActivity{
                         String num = ThirdFragment.cafeteria[ThirdFragment.cafe].number;
                         ThirdFragment.cafeteria[ThirdFragment.cafe].number = String.valueOf(Integer.valueOf(num) + 1);
                         ThirdFragment.adapter.notifyDataSetChanged();
-                        new PostReview().execute("http://143.248.36.204:8080/" +  ThirdFragment.cafeteria[ThirdFragment.cafe].name, MainActivity.user, String.valueOf(rate), review.getText().toString());
+                        int i = ThirdFragment.cafe + 1;
+                        new PostReview().execute("http://143.248.36.204:8080/place" + i + "/reviews", MainActivity.user, String.valueOf(rate), review.getText().toString());
                     }
                 });
             }
