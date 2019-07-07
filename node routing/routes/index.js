@@ -1,37 +1,37 @@
-module.exports = function(app, Account)
+module.exports = function(app, Account, Place, Upload)
 {
-  var Contact = require('../models/contact');
+  const Contact = require('../models/contact');
+  const Review = require('../models/review');
     //get all accounts
    app.get('/accounts', function(req, res){
       Account.find(function(err, accounts){
-         if(err) return res.status(500).send({error: 'database failure'});
+         if(err) return res.status(500).json({error: 'database failure'});
          res.json(accounts);
      })
   });
 
   // register account
   app.post('/register', function(req, res){
-    var account = new Account();
-    account.userName = req.body.userName;
-    account.password = req.body.password;
+    Account.findOne({userName: req.body.userName}, function(err, account){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(account) return res.status(401).json({error: 'existing username'})
+      
+      var newAccount = new Account();
+      newAccount.userName = req.body.userName;
+      newAccount.password = req.body.password;
 
-    account.save(function(err){
-       if(err){
-          console.error(err);
-          res.json({result: 0});
-          return;
-       }
-
-       res.json({result: 1});
-
-    });
+      newAccount.save(function(err){
+        if(err) return res.status(500).json({error: 'failed to register'});
+        return res.json({message: 'registered'});
+      })
+    })
   });
 
   // login and return username
   app.post('/login', function(req, res){
     Account.findOne({userName: req.body.userName}, function(err, account){
       if(err) return res.status(500).json({error: 'database failure'});
-      if(!account) return res.status(404).json({error: 'account not found'})
+      if(!account) return res.status(404).json({error: 'account not found'});
       if(account.password != req.body.password) return res.status(401).json({error: 'password incorrect'});
       res.json(account.userName);
     })
@@ -48,10 +48,6 @@ module.exports = function(app, Account)
 
   // add contact
   app.post('/contacts/:userName', function(req, res){
-    // var contact = new Contact();
-    // contact.name = req.body.name;
-    // contact.phoneNumber = req.body.phoneNumber;
-
     Account.findOne({userName: req.params.userName}, function(err, account){
       if(err) return res.status(500).json({error: 'database failure'});
       if(!account) return res.status(404).json({error: 'account not found'});
@@ -62,56 +58,86 @@ module.exports = function(app, Account)
       account.contacts.push(contact);
       
       account.save(function(err){
-        if(err) res.status(500).json({error: 'failed to update'});
+        if(err) return res.status(500).json({error: 'failed to update'});
         res.json({message: 'updated'});
       })
     })
   });
 
-
-  //   contact.save(function(err){
-  //      if(err){
-  //         console.error(err);
-  //         res.json({result: 0});
-  //         return;
-  //      }
-
-  //      res.json({result: 1});
-
-  //   });
-  // });
-
-  
-
-  // UPDATE THE BOOK
-  app.put('/api/books/:book_id', function(req, res){
-    Book.findById(req.params.book_id, function(err, book){
-        if(err) return res.status(500).json({ error: 'database failure' });
-        if(!book) return res.status(404).json({ error: 'book not found' });
-
-        if(req.body.title) book.title = req.body.title;
-        if(req.body.author) book.author = req.body.author;
-        if(req.body.published_date) book.published_date = req.body.published_date;
-
-        book.save(function(err){
-            if(err) res.status(500).json({error: 'failed to update'});
-            res.json({message: 'book updated'});
-        });
-
-    });
+//get all place info
+  app.get('/places', function(req, res){
+    var query = Place.find()/*.select("-reviews")*/;
+    query.exec(function(err, places){
+      if(err) return res.status(500).send({error: 'database failure'});
+      res.json(places);
+    })
   });
 
-  // DELETE BOOK
-  app.delete('/api/books/:book_id', function(req, res){
-    Book.remove({ _id: req.params.book_id }, function(err, output){
-        if(err) return res.status(500).json({ error: "database failure" });
+  app.post('/places', function(req, res){
+    var place = new Place();
+    if(req.body.name) place.name = req.body.name;
+    if(req.body.average) place.average = req.body.average;
+    else place.average = 0;
+    place.reviewCount = 0;
 
-        /* ( SINCE DELETE OPERATION IS IDEMPOTENT, NO NEED TO SPECIFY )
-        if(!output.result.n) return res.status(404).json({ error: "book not found" });
-        res.json({ message: "book deleted" });
-        */
+    place.save(function(err){
+      if(err) return res.status(500).json({error: 'failed to update'});
+      res.json({message: 'updated'});
+    })
+  })
 
-        res.status(204).end();
+//get all reviews of a certain place
+  app.get('/:place/reviews', function(req, res){
+    Place.findOne({name: req.params.place}, function(err, place){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!place) return res.status(404).json({error: 'place not found'});
+      res.json(place.reviews);
+    })
+  });
+
+  //add new review
+  app.post('/:place/reviews', function(req, res){
+    
+    Place.findOne({name: req.params.place}, function(err, place){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!place) return res.status(404).json({error: 'place not found'});
+      
+      var review = new Review();
+      if(req.body.userName) review.userName = req.body.userName;
+      if(req.body.rating) review.rating = req.body.rating;
+      if(req.body.content) review.content = req.body.content;
+      const cnt = place.reviewCount;
+      const avg = place.average;
+  
+      place.reviews.unshift(review);
+      place.average = (avg * cnt + req.body.rating) / (cnt + 1);
+      place.reviewCount = cnt + 1;
+      // place.makeModified('reviews');
+      place.save(function(err){
+        if(err) return res.status(500).json({error: 'failed to add review'});
+        res.json({message: 'updated'});
+      })
+      
+    })
+  });
+
+  // delete all reviews
+  app.delete('/reviews', function(req, res){
+    Place.find().forEach(function(err, place){
+      if(err) return res.status(500).json({ error: 'database failure' });
+      if(!place) return res.status(404).json({error: 'place not found'});
+      place.reviews = [];
+      place.save(function(err){
+        if(err) return res.status(500).json({error: 'failed to delete'});
+        res.json({message: 'deleted'});
+      })
+    })
+  });
+
+  app.post('/upload', function(req, res){
+    Upload(req, res, function(err){
+      if(err) return res.status(500).json({ error: 'upload error'});
+      res.json({message: 'upload successful'});
     })
   });
 }
