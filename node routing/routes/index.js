@@ -66,7 +66,7 @@ module.exports = function(app, Account, Place, Upload)
 
 //get all place info
   app.get('/places', function(req, res){
-    var query = Place.find()/*.select("-reviews")*/;
+    var query = Place.find().select("-reviews");
     query.exec(function(err, places){
       if(err) return res.status(500).send({error: 'database failure'});
       res.json(places);
