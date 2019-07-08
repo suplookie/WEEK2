@@ -8,15 +8,20 @@ import android.content.Intent;
 
 
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,9 +43,11 @@ import org.json.JSONObject;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -51,8 +58,11 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class SecondFragment extends Fragment {
@@ -68,7 +78,6 @@ public class SecondFragment extends Fragment {
     static FloatingActionButton delete_fab;
     String path;
     String TAG = "sending file";
-    int idx;
 
     public static SecondFragment newInstance() {
         Bundle args = new Bundle();
@@ -166,11 +175,20 @@ public class SecondFragment extends Fragment {
         //리사이클러뷰에 CardAdapter 객체 지정
         recyclerView.setAdapter(adapter) ;
 
+        ImageView imageView = view.findViewById(R.id.img);
+        imageView.setImageURI(Uri.parse("http://143.248.36.204:8080/photos/" + MainActivity.user + "/0"));
+
+
+
+
+
+        adapter.notifyDataSetChanged();
+        Toast.makeText(mContext, TabActivity.list.size() + "listsize", Toast.LENGTH_SHORT).show();
+
 
         return view;
 
     }
-
 
 
     private void takePhoto(){
@@ -322,7 +340,6 @@ public class SecondFragment extends Fragment {
 
     }
 
-
     public String getRealPathFromURI(Context context, Uri contentUri) {
         Cursor cursor = null;
         try {
@@ -425,72 +442,7 @@ public class SecondFragment extends Fragment {
 
     }
 
-    class getCount extends AsyncTask<String, Void, String> {
 
-        ProgressDialog progressDialog;
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            progressDialog = new ProgressDialog(mContext);
-            progressDialog.setMessage("Loading data..");
-            progressDialog.show();
-        }
 
-        @Override
-        protected String doInBackground(String... params) {
-
-            try {
-                return getData(params[0]);
-            }
-            catch (IOException ex){
-                return "Network error !";
-            }
-        }
-
-        @Override
-        protected void onPostExecute (String result) {
-            super.onPostExecute(result);
-            if (progressDialog != null) {
-                progressDialog.dismiss();
-            }
-            try {
-                JSONObject json = new JSONObject(result);
-                idx = json.getInt("count");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        private String getData (String urlPath) throws IOException {
-            StringBuilder result = new StringBuilder();
-            BufferedReader bufferedReader = null;
-            try{
-                URL url = new URL(urlPath);
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setReadTimeout(10000);
-                urlConnection.setConnectTimeout(10000);
-                urlConnection.setRequestMethod("GET");
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                Log.i("connect", "before");
-                urlConnection.connect();
-                Log.i("connect", "after");
-
-                //Read response
-                InputStream inputStream = urlConnection.getInputStream();
-                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                String line;
-                while ((line = bufferedReader.readLine()) !=  null) {
-                    result.append(line).append("\n");
-                }
-            } finally {
-                if(bufferedReader != null) {
-                    bufferedReader.close();
-                }
-            }
-            Gson gson = new Gson();
-            //result.toJson();
-            return result.toString();
-        }
-    }
 }

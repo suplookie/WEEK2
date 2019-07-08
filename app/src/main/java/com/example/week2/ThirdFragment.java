@@ -111,17 +111,17 @@ public class ThirdFragment extends Fragment {
     private class Description extends AsyncTask<Void, Void, Void> {
 
         //진행바표시
-        private ProgressDialog progressDialog;
+        //private ProgressDialog progressDialog;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
 
             //진행다일로그 시작
-            progressDialog = new ProgressDialog(mContext);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progressDialog.setMessage("잠시 기다려 주세요.");
-            progressDialog.show();
+            //progressDialog = new ProgressDialog(mContext);
+            //progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            //progressDialog.setMessage("잠시 기다려 주세요.");
+            //progressDialog.show();
 
         }
 
@@ -154,7 +154,7 @@ public class ThirdFragment extends Fragment {
 
             listView.setAdapter(adapter);
 
-            progressDialog.dismiss();
+            //progressDialog.dismiss();
         }
     }
 
