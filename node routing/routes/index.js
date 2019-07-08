@@ -162,38 +162,6 @@ module.exports = function(app, Account, Place)
   const multer = require('multer');
   // const path = require('path');
   const fs = require('fs');
-  
-  // function getCount(userName){
-  //   var photoCount = -1;
-  //   Account.findOne({userName: userName}, function(err, account){
-  //     if(err){
-  //       photoCount = -2;
-  //       return;
-  //     }
-  //     if(!account){
-  //       photoCount = -3;
-  //       return;
-  //     }
-  //     photoCount = account.photoCount;
-  //   })
-  //   return photoCount;
-  // };
-
-  // function setCount(userName, newCount){
-  //   var errCode = -1;
-  //   Account.findOne({userName: userName}, function(err, account){
-  //     if(err){
-  //       errCode = -2;
-  //       return;
-  //     }
-  //     if(!account){
-  //       errCode = -3;
-  //       return;
-  //     }
-  //     account.photoCount = newCount;
-  //   })
-  //   return;
-  // };
 
   app.post('/photos/:userName', function(req, res){
     Account.findOne({userName: req.params.userName}, function(err, account){
@@ -226,6 +194,7 @@ module.exports = function(app, Account, Place)
     })
   });
 
+  //get photo at index
   app.get('/photos/:userName/:index', function(req, res){
     const filepath = './public/' + req.params.userName + '/image-'+ req.params.index +'.png';
     file = fs.readFileSync(filepath);
@@ -233,6 +202,7 @@ module.exports = function(app, Account, Place)
     res.end();
   });
 
+  //get photocount
   app.get('/count/:userName/', function(req, res){
     Account.findOne({userName: req.params.userName}, function(err, account){
       if(err) return res.status(500).json({error: 'database failure'});
@@ -241,12 +211,35 @@ module.exports = function(app, Account, Place)
     })
   });
 
+  //delete photo at index
   app.delete('/photos/:userName/:index', function(req, res){
     const filepath = './public/' + req.params.userName + '/image-'+ req.params.index +'.png';
     fs.unlink(filepath, function(err){
       if(err) return res.status(500).json({error: 'unlink error'});
-      res.json({message: 'delete successful'});
+      Account.findOne({userName: req.params.userName}, function(err, account){
+        if(err) return res.status(500).json({error: 'database failure'});
+        if(!account) return res.status(401).json({error: 'no such username'})
+        var photoCount = account.photoCount;
+        var i = req.params.index*1 + 1;
+        var flag = 0;
+        while(i < photoCount){
+          fs.rename('./public/' + req.params.userName + '/image-' + i + '.png', './public/' + req.params.userName + '/image-' + (i-1) + '.png', function(err){
+            if(err){
+              flag = 1;
+              return;
+            }
+          });
+          i++;
+        }
+        if(flag) return res.status(500).json({error: 'rename failure'});
+        account.photoCount = photoCount - 1;
+        account.save(function(err){
+          if(err) return res.status(500).json({error: 'photoCount error'});
+          res.json({message: 'delete successful'});
+        })
+      })
     })
+    
   });
 
 }
