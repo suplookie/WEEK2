@@ -102,7 +102,6 @@ public class SecondFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_second, container, false);
         tedPermission();
 
-        TabActivity.list = new ArrayList<>();
         delete_fab = view.findViewById(R.id.fab_delete);
         delete_fab.setOnClickListener(new View.OnClickListener() {
             @Override
