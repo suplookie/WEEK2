@@ -5,21 +5,13 @@ const express     = require('express');
 const app         = express();
 const bodyParser  = require('body-parser');
 const mongoose    = require('mongoose');
-const multer = require('multer');
-const path = require('path');
+
 
 //set storage
-const storage = multer.diskStorage({
-    destination: './public/uploads',
-    filename: function(req, file, cb){
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-    }
-})
+
 
 //set upload
-const Upload = multer({
-    storage: storage
-}).single('image');
+
 
 // [ CONFIGURE mongoose ]
 
@@ -46,10 +38,9 @@ app.use(bodyParser.json());
 var port = process.env.PORT || 8080;
 
 // [CONFIGURE ROUTER]
-var router = require('./routes')(app, Account, Place, Upload);
+var router = require('./routes')(app, Account, Place);
 
 // [RUN SERVER]
 var server = app.listen(port, function(){
  console.log("Express server has started on port " + port)
 });
-

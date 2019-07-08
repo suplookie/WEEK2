@@ -1,4 +1,4 @@
-module.exports = function(app, Account, Place, Upload)
+module.exports = function(app, Account, Place)
 {
   const Contact = require('../models/contact');
   const Review = require('../models/review');
@@ -134,10 +134,57 @@ module.exports = function(app, Account, Place, Upload)
     })
   });
 
-  app.post('/upload', function(req, res){
-    Upload(req, res, function(err){
-      if(err) return res.status(500).json({ error: 'upload error'});
-      res.json({message: 'upload successful'});
+  const multer = require('multer');
+  const path = require('path');
+  const fs = require('fs');
+
+  app.post('/photos/:userName', function(req, res){
+    Account.findOne({userName: req.params.userName}, function(err, account){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!account) return res.status(401).json({error: 'no such username'})
+      
+      const storage = multer.diskStorage({
+        destination: './public/' + req.params.userName,
+        filename: function(req, file, cb){
+            cb(null, 'image-' + account.photoCount + '.png'/*path.extname(file.originalname)*/);
+        }
+      });
+      
+      const upload = multer({
+        storage: storage
+      }).fields([
+        { name: 'image', maxCount: 1}
+      ]);
+  
+      upload(req, res, function(err){
+        if(err) return res.status(500).json({ error: 'upload error'});
+        
+        account.photoCount = account.photoCount + 1;
+  
+        account.save(function(err){
+          if(err) return res.status(500).json({error: 'photoCount error'});
+          res.json({message: 'upload successful'});
+        })
+      })
     })
   });
+
+  app.get('/photos/:userName/:index', function(req, res){
+    const filepath = './public/' + req.params.userName + '/image-'+ req.params.index +'.png';
+    file = fs.readFileSync(filepath);
+    res.write(file);
+    res.end();
+  });
+
+  app.get('/count/:userName/', function(req, res){
+    Account.findOne({userName: req.params.userName}, function(err, account){
+      if(err) return res.status(500).json({error: 'database failure'});
+      if(!account) return res.status(401).json({error: 'no such username'})
+      res.json({count: account.photoCount});
+    })
+  })
+
 }
+
+
+
