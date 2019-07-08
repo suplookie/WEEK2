@@ -34,7 +34,7 @@ module.exports = function(app, Account, Place)
       if(err) return res.status(500).json({error: 'database failure'});
       if(!account) return res.status(404).json({error: 'account not found'});
       if(account.password != req.body.password) return res.status(401).json({error: 'password incorrect'});
-      res.json(account.userName);
+      res.json({userName: account.userName, photoCount: account.photoCount});
     })
   });
 
@@ -196,7 +196,7 @@ module.exports = function(app, Account, Place)
 
   //get photo at index
   app.get('/photos/:userName/:index', function(req, res){
-    const filepath = './public/' + req.params.userName + '/image-'+ req.params.index +'.png';
+    const filepath = './public/' + req.params.userName + '/image-'+ req.params.index;
     file = fs.readFileSync(filepath);
     res.write(file);
     res.end();
