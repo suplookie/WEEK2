@@ -110,7 +110,7 @@ module.exports = function(app, Account, Place)
       const avg = place.average;
   
       place.reviews.unshift(review);
-      place.average = (avg * cnt + req.body.rating) / (cnt + 1);
+      place.average = (avg * cnt + 1.0 * req.body.rating) / (cnt + 1);
       place.reviewCount = cnt + 1;
       // place.makeModified('reviews');
       place.save(function(err){
