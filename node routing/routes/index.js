@@ -1,5 +1,6 @@
 module.exports = function(app, Account, Place)
 {
+  var lastAccess = 0;
   const Contact = require('../models/contact');
   const Review = require('../models/review');
     //get all accounts
@@ -66,6 +67,15 @@ module.exports = function(app, Account, Place)
 
 //get all place info
   app.get('/places', function(req, res){
+    today = new Date().getDay();
+    if(lastAccess != today){
+      deleteReviews('place1');
+      deleteReviews('place2');
+      deleteReviews('place3');
+      deleteReviews('place4');
+      deleteReviews('place5');
+      lastAccess = today;
+    }
     var query = Place.find().select("-reviews");
     query.exec(function(err, places){
       if(err) return res.status(500).send({error: 'database failure'});
@@ -91,6 +101,7 @@ module.exports = function(app, Account, Place)
     Place.findOne({name: req.params.place}, function(err, place){
       if(err) return res.status(500).json({error: 'database failure'});
       if(!place) return res.status(404).json({error: 'place not found'});
+
       res.json(place.reviews);
     })
   });
@@ -121,22 +132,68 @@ module.exports = function(app, Account, Place)
     })
   });
 
-  // delete all reviews
-  app.delete('/reviews', function(req, res){
-    Place.find().forEach(function(err, place){
-      if(err) return res.status(500).json({ error: 'database failure' });
-      if(!place) return res.status(404).json({error: 'place not found'});
+  function deleteReviews(placeName){
+    Place.findOne({name: placeName}, function(err, place){
+      if(err) return 'database failure';
+      if(!place) return 'place not found';
       place.reviews = [];
+      place.reviewCount = 0;
       place.save(function(err){
-        if(err) return res.status(500).json({error: 'failed to delete'});
-        res.json({message: 'deleted'});
+        if(err) return 'failed to save';
+        return 'saved';
       })
     })
-  });
+  };
+
+  // // delete all reviews
+  // app.delete('/reviews', function(req, res){
+  //   Place.find().forEach(function(err, place){
+  //     if(err) return res.status(500).json({ error: 'database failure' });
+  //     if(!place) return res.status(404).json({error: 'place not found'});
+  //     place.reviews = [];
+  //     place.reviewCount = 0;
+  //     place.save(function(err){
+  //       if(err) return res.status(500).json({error: 'failed to delete'});
+  //       res.json({message: 'deleted'});
+  //     })
+  //   })
+  // });
 
   const multer = require('multer');
-  const path = require('path');
+  // const path = require('path');
   const fs = require('fs');
+  
+  // function getCount(userName){
+  //   var photoCount = -1;
+  //   Account.findOne({userName: userName}, function(err, account){
+  //     if(err){
+  //       photoCount = -2;
+  //       return;
+  //     }
+  //     if(!account){
+  //       photoCount = -3;
+  //       return;
+  //     }
+  //     photoCount = account.photoCount;
+  //   })
+  //   return photoCount;
+  // };
+
+  // function setCount(userName, newCount){
+  //   var errCode = -1;
+  //   Account.findOne({userName: userName}, function(err, account){
+  //     if(err){
+  //       errCode = -2;
+  //       return;
+  //     }
+  //     if(!account){
+  //       errCode = -3;
+  //       return;
+  //     }
+  //     account.photoCount = newCount;
+  //   })
+  //   return;
+  // };
 
   app.post('/photos/:userName', function(req, res){
     Account.findOne({userName: req.params.userName}, function(err, account){
@@ -182,7 +239,15 @@ module.exports = function(app, Account, Place)
       if(!account) return res.status(401).json({error: 'no such username'})
       res.json({count: account.photoCount});
     })
-  })
+  });
+
+  app.delete('/photos/:userName/:index', function(req, res){
+    const filepath = './public/' + req.params.userName + '/image-'+ req.params.index +'.png';
+    fs.unlink(filepath, function(err){
+      if(err) return res.status(500).json({error: 'unlink error'});
+      res.json({message: 'delete successful'});
+    })
+  });
 
 }
 
