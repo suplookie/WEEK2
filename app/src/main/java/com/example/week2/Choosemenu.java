@@ -81,6 +81,7 @@ public class Choosemenu extends AppCompatActivity{
                 for (int p = 0; p < names.size(); p++) {
                     if (names.get(p).equals(MainActivity.user)) {
                         written = true;
+                        Toast.makeText(getApplicationContext(), "You already posted a review", Toast.LENGTH_SHORT).show();
                         break;
                     }
                 }

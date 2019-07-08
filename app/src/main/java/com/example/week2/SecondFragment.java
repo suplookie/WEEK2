@@ -2,12 +2,14 @@ package com.example.week2;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 
 
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -20,27 +22,38 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
-import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.gson.Gson;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
 
 public class SecondFragment extends Fragment {
 
@@ -51,9 +64,11 @@ public class SecondFragment extends Fragment {
     private FloatingActionButton fab_cam;
     private CardAdapter adapter;
     private boolean isMenuOpen = false;
-    private Uri imgUri, photoURI;
+    private Uri imgUri;
     static FloatingActionButton delete_fab;
     String path;
+    String TAG = "sending file";
+    int idx;
 
     public static SecondFragment newInstance() {
         Bundle args = new Bundle();
@@ -199,24 +214,15 @@ public class SecondFragment extends Fragment {
             return;
         }
 
-        photoURI = imgUri;
-
         switch (requestCode){
 
             case PICK_FROM_ALBUM : {
                 //앨범에서 가져오기
                 if(data.getData()!=null){
                     try{
-                        photoURI = data.getData();
-
-//                        path = getPathFromURI(photoURI);
-//
-//                        File f = new File(path);
-//                        upload(f);
-
-
+                        imgUri = data.getData();
                         //이미지뷰에 이미지 셋팅
-                        if (!TabActivity.list.add(photoURI))
+                        if (!TabActivity.list.add(imgUri))
                             Toast.makeText(activity, "list add failed", Toast.LENGTH_SHORT).show();
                     }catch (Exception e){
                         e.printStackTrace();
@@ -233,26 +239,19 @@ public class SecondFragment extends Fragment {
                     //이미지뷰에 이미지셋팅
                     if (!TabActivity.list.add(imgUri))
                         Toast.makeText(activity, "list add failed", Toast.LENGTH_SHORT).show();
+
                 }catch (Exception e){
                     e.printStackTrace();
                 }
                 break;
             }
         }
-        InputStream in = null;
-        try {
-            in = activity.getContentResolver().openInputStream(photoURI);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        if (mCurrentPhotoPath == null) {
+            mCurrentPhotoPath = getRealPathFromURI(mContext, imgUri);
         }
+        new UploadFile().execute();
 
         adapter.notifyDataSetChanged();
-
-
-
-
-
     }
 
     private void galleryAddPic(){
@@ -323,26 +322,175 @@ public class SecondFragment extends Fragment {
 
     }
 
-//    private String getPathFromURI(Uri contentUri) {
-//        String[] proj = { MediaStore.Images.Media.DATA };
-//        CursorLoader loader = new CursorLoader(mContext, contentUri, proj, null, null, null);
-//        Cursor cursor = loader.loadInBackground();
-//        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-//        cursor.moveToFirst();
-//        return cursor.getString(column_index);
-//    }
-//
-//    private void upload(File file) {
-//        MainActivity.compositeDisposable.add(MainActivity.iMyService.uploadImage(file)
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(new Consumer<String>() {
-//                    @Override
-//                    public void accept(String response) throws Exception {
-//                        Toast.makeText(mContext, ""+response, Toast.LENGTH_SHORT).show();
-//                    }
-//                }));
-//    }
+
+    public String getRealPathFromURI(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = { MediaStore.Images.Media.DATA };
+            cursor = context.getContentResolver().query(contentUri,  proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
 
 
+    class UploadFile extends AsyncTask<Object, String, String> {
+        String file_name = "";
+        @Override
+        protected String doInBackground(Object[] params) {
+            try {
+                String lineEnd = "\r\n";
+                String twoHyphens = "--";
+                String boundary = "*****";
+                int bytesRead, bytesAvailable, bufferSize;
+                byte[] buffer;
+                int maxBufferSize = 1024 * 1024;
+
+
+                int pos = mCurrentPhotoPath.lastIndexOf( "/" );
+                String ext = mCurrentPhotoPath.substring( pos + 1 );
+
+                URL url = new URL("http://143.248.36.204:8080/photos/" + MainActivity.user);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                // Allow Inputs &amp; Outputs.
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+                connection.setUseCaches(false);
+
+                // Set HTTP method to POST.
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Connection", "Keep-Alive");
+                connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+                FileInputStream fileInputStream;
+                DataOutputStream outputStream;
+                outputStream = new DataOutputStream(connection.getOutputStream());
+                outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+
+                outputStream.writeBytes("Content-Disposition: form-data; name=\"reference\""+ lineEnd);
+                outputStream.writeBytes(lineEnd);
+                outputStream.writeBytes("my_refrence_text");
+                outputStream.writeBytes(lineEnd);
+                outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+
+                outputStream.writeBytes("Content-Disposition: form-data; name=\"image\";filename=\"" + ext +"\"" + lineEnd);
+                outputStream.writeBytes(lineEnd);
+
+                fileInputStream = new FileInputStream(mCurrentPhotoPath);
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                // Read file
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0) {
+                    outputStream.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                }
+                outputStream.writeBytes(lineEnd);
+                outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+                // Responses from the server (code and message)
+                int serverResponseCode = connection.getResponseCode();
+                String result = null;
+                if (serverResponseCode == 200) {
+                    StringBuilder s_buffer = new StringBuilder();
+                    InputStream is = new BufferedInputStream(connection.getInputStream());
+                    BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                    String inputLine;
+                    while ((inputLine = br.readLine()) != null) {
+                        s_buffer.append(inputLine);
+                    }
+                    result = s_buffer.toString();
+                }
+                fileInputStream.close();
+                outputStream.flush();
+                outputStream.close();
+                if (result != null) {
+                    Log.d("result_for upload" + ext, result);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return file_name;
+        }
+
+    }
+
+    class getCount extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(mContext);
+            progressDialog.setMessage("Loading data..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                return getData(params[0]);
+            }
+            catch (IOException ex){
+                return "Network error !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute (String result) {
+            super.onPostExecute(result);
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+            try {
+                JSONObject json = new JSONObject(result);
+                idx = json.getInt("count");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private String getData (String urlPath) throws IOException {
+            StringBuilder result = new StringBuilder();
+            BufferedReader bufferedReader = null;
+            try{
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setRequestMethod("GET");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                Log.i("connect", "before");
+                urlConnection.connect();
+                Log.i("connect", "after");
+
+                //Read response
+                InputStream inputStream = urlConnection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) !=  null) {
+                    result.append(line).append("\n");
+                }
+            } finally {
+                if(bufferedReader != null) {
+                    bufferedReader.close();
+                }
+            }
+            Gson gson = new Gson();
+            //result.toJson();
+            return result.toString();
+        }
+    }
 }

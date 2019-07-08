@@ -193,18 +193,8 @@ public class FirstFragment extends Fragment {
 
 
 
-            Bitmap photo = BitmapFactory.decodeResource(getActivity().getResources(), R.id.image);
-
-            InputStream inputStream = ContactsContract.Contacts.openContactPhotoInputStream(getActivity().getContentResolver(),
-                    ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, new Long(id)));
-
-            if (inputStream != null) {
-                photo = BitmapFactory.decodeStream(inputStream);
-                mImage.add(photo);
-            }else{
-                photo = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_launcher_foreground);
-                mImage.add(photo);
-            }
+            Bitmap photo = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_launcher_foreground);
+            mImage.add(photo);
         }
 
     }

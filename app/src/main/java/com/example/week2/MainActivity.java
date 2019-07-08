@@ -57,6 +57,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+
 public class MainActivity extends AppCompatActivity {
 
     static TextView mResult;
@@ -88,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         mResult = findViewById(R.id.txt_delete_account);
+
 
 
         final LocationManager locationManager = (LocationManager)
@@ -197,6 +199,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 user = name.getText().toString();
+                if (name.getText().toString().equals("") || password.getText().toString().equals("")){
+                    Toast.makeText(MainActivity.this, "Empty Name or Password", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 new PostDataTask().execute("http://143.248.36.204:8080/login", name.getText().toString(), password.getText().toString());
             }
         });
@@ -319,6 +325,8 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(getApplicationContext(), TabActivity.class);
                 Toast.makeText(getApplicationContext(), "Hello " + user, Toast.LENGTH_SHORT).show();
                 startActivity(intent);
+            }else {
+                Toast.makeText(MainActivity.this, "Incorrect Name or Password", Toast.LENGTH_SHORT).show();
             }
 
         }
@@ -464,8 +472,6 @@ class ProximityAlertReceiver extends BroadcastReceiver
 {
     @Override
     public void onReceive(Context context, Intent intent) {
-        //방송을 잘 잡으면 밑에 로그 한번 찍어줌.
-        // 지피에스 위치가 변해서 127, 37.5 로 되면 DDMS 에 아래 로그가 찍힘으로 확인 가능
         Log.d("MyTag", "Proximity Alert was fired");
 
         String channelId = "channel";
@@ -496,4 +502,3 @@ class ProximityAlertReceiver extends BroadcastReceiver
         notifManager.notify(0, builder.build());
     }
 }
-
