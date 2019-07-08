@@ -78,22 +78,22 @@ public class TabActivity extends AppCompatActivity {
 
         MakePhtoDir();
 
+        String imgUrl = "http://143.248.36.204:8080/photos/" + MainActivity.user + "/" + 2;
+        String FileName = imgUrl.substring( imgUrl.lastIndexOf('/')+1, imgUrl.length() );
+        DownloadPhotoFromURL downloadPhotoFromURL = new DownloadPhotoFromURL();
+        // 동일한 파일이 있는지 검사
+        if(!new File(dir.getPath() + File.separator + FileName).exists()){
+            downloadPhotoFromURL.execute(imgUrl,FileName);
+        } else {
+            Toast.makeText(TabActivity.this, "파일이 이미 존재합니다", Toast.LENGTH_SHORT).show();
+
+            File file = new File(dir + "/" + FileName);
+            //Bitmap photoBitmap = BitmapFactory.decodeFile(file.getAbsolutePath() );
+            //imageView.setImageBitmap(photoBitmap);
+            list.add(Uri.fromFile(file));
+        }
         for (int i = 0; i < idx; i++) {
 
-            String imgUrl = "http://143.248.36.204:8080/photos/" + MainActivity.user + "/" + i;
-            String FileName = imgUrl.substring( imgUrl.lastIndexOf('/')+1, imgUrl.length() );
-            DownloadPhotoFromURL downloadPhotoFromURL = new DownloadPhotoFromURL();
-            // 동일한 파일이 있는지 검사
-            if(!new File(dir.getPath() + File.separator + FileName).exists()){
-                downloadPhotoFromURL.execute(imgUrl,FileName);
-            } else {
-                Toast.makeText(TabActivity.this, "파일이 이미 존재합니다", Toast.LENGTH_SHORT).show();
-
-                File file = new File(dir + "/" + FileName);
-                //Bitmap photoBitmap = BitmapFactory.decodeFile(file.getAbsolutePath() );
-                //imageView.setImageBitmap(photoBitmap);
-                TabActivity.list.add(Uri.parse(file.getPath()));
-            }
 
         }
 
@@ -176,8 +176,7 @@ public class TabActivity extends AppCompatActivity {
                     bufferedReader.close();
                 }
             }
-            Gson gson = new Gson();
-            //result.toJson();
+
             return result.toString();
         }
     }
@@ -255,6 +254,7 @@ public class TabActivity extends AppCompatActivity {
             super.onProgressUpdate(progress);
         }
 
+        @Override
         protected void onPostExecute(String result) {
             // pdLoading.dismiss();
             if (progressDialog != null) {
