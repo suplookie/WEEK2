@@ -98,7 +98,6 @@ public class TabActivity extends AppCompatActivity {
             Log.d("file_path is: ", dir.getPath() + File.separator + FileName);
             if(file.exists()){
 //            file =  new File(dir + "/" + FileName);
-                Toast.makeText(TabActivity.this, "파일이 이미 존재합니다", Toast.LENGTH_SHORT).show();
                 //Bitmap photoBitmap = BitmapFactory.decodeFile(file.getAbsolutePath() );
                 //imageView.setImageBitmap(photoBitmap);
                 Log.d("file_path is: ", "@@@@@@" + file.getAbsolutePath());
@@ -285,13 +284,11 @@ public class TabActivity extends AppCompatActivity {
                 progressDialog.dismiss();
             }
             if (result == null) {
-                Toast.makeText(TabActivity.this, "다운로드 완료되었습니다.", Toast.LENGTH_LONG).show();
 
                 File file = new File(dir + "/" + tempFileName);
                 //이미지 스캔해서 갤러리 업데이트
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
             } else {
-                Toast.makeText(TabActivity.this, "다운로드 에러", Toast.LENGTH_LONG).show();
             }
         }
     }

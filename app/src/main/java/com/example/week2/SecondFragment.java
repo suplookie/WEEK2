@@ -182,7 +182,6 @@ public class SecondFragment extends Fragment {
 
 
         adapter.notifyDataSetChanged();
-        Toast.makeText(mContext, TabActivity.list.size() + "listsize", Toast.LENGTH_SHORT).show();
 
 
         return view;
@@ -227,7 +226,6 @@ public class SecondFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode != Activity.RESULT_OK){
-            Toast.makeText(activity, "result code: "+ resultCode, Toast.LENGTH_SHORT).show();
             return;
         }
 

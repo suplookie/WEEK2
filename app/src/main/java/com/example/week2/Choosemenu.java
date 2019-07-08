@@ -44,6 +44,7 @@ public class Choosemenu extends AppCompatActivity{
     EditText review;
     TextView total;
 
+    boolean written = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,27 +78,29 @@ public class Choosemenu extends AppCompatActivity{
             public void onRatingChanged(final RatingBar ratingBar, final float v, boolean b) {
                 rate = v;
                 Button button = findViewById(R.id.submit);
-                boolean written = false;
                 for (int p = 0; p < names.size(); p++) {
                     if (names.get(p).equals(MainActivity.user)) {
                         written = true;
-                        Toast.makeText(getApplicationContext(), "You already posted a review", Toast.LENGTH_SHORT).show();
                         break;
                     }
                 }
-                if (!written) {
-                    button.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
+                button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (!written) {
                             Toast.makeText(Choosemenu.this, "rate submitted", Toast.LENGTH_SHORT).show();
                             String num = ThirdFragment.cafeteria[ThirdFragment.cafe].number;
                             ThirdFragment.cafeteria[ThirdFragment.cafe].number = String.valueOf(Integer.valueOf(num) + 1);
                             ThirdFragment.adapter.notifyDataSetChanged();
                             int i = ThirdFragment.cafe + 1;
                             new PostReview().execute("http://143.248.36.204:8080/place" + i + "/reviews", MainActivity.user, String.valueOf(rate), review.getText().toString());
+                            written = true;
                         }
-                    });
-                }
+                        else {
+                            Toast.makeText(getApplicationContext(), "You already posted a review", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             }
         });
 
